@@ -517,7 +517,7 @@ var wfCiviAdmin = (function ($, D) {
         var $pageSelect = $('[name=civicrm_1_contribution_1_contribution_contribution_page_id]');
         // Warning about contribution page with no email
         if ($pageSelect.val() !== '0' && ($('[name=civicrm_1_contact_1_email_email]:checked').length < 1 || $('[name=contact_1_number_of_email]').val() == '0')) {
-          var msg = Drupal.t('You must enable an email field for !contact in order to process transactions.', {'!contact': getContactLabel(1)});
+          var msg = Drupal.t('You must enable an email field for :contact in order to process transactions.', {':contact': getContactLabel(1)});
           if (!$('.wf-crm-billing-email-alert').length) {
             $pageSelect.after('<div class="messages error wf-crm-billing-email-alert">' + msg + ' <button>' + Drupal.t('Enable It') + '</button></div>');
             $('.wf-crm-billing-email-alert button').click(function() {

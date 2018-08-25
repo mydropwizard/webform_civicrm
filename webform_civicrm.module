@@ -22,3 +22,32 @@ function webform_civicrm_help($route_name, RouteMatchInterface $route_match) {
     default:
   }
 }
+
+/**
+ * Return a value from nested arrays or objects.
+ *
+ * @param array|object $haystack
+ *   The array to search
+ * @param string $keys
+ *   Pass a single key, or multiple keys separated by : to get a nested value
+ * @param mixed $default
+ *   Value to return if given array key does not exist
+ * @param bool $strict
+ *   Should we use empty or isset to determine if array key exists? If TRUE, use isset
+ *
+ * @return mixed
+ *   found value or default
+ */
+function wf_crm_aval($haystack, $keys, $default = NULL, $strict = FALSE) {
+  foreach (explode(':', $keys) as $key) {
+    if (is_object($haystack)) {
+      $haystack = (array) $haystack;
+    }
+    if (!is_array($haystack) || !isset($haystack[$key]) || (empty($haystack[$key]) && $default !== NULL && !$strict)) {
+      return $default;
+    }
+    $haystack = $haystack[$key];
+  }
+  // $haystack has been reduced down to the item we want
+  return $haystack;
+}
