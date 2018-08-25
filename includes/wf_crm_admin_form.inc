@@ -25,9 +25,6 @@ class wf_crm_admin_form {
   public static $fieldset_entities = array('contact', 'activity', 'case', 'grant');
 
   function __construct($form, &$form_state, $node) {
-    module_load_include('inc', 'webform_civicrm', 'includes/utils');
-    module_load_include('inc', 'webform_civicrm', 'includes/wf_crm_admin_help');
-    module_load_include('inc', 'webform_civicrm', 'includes/wf_crm_webform_base');
     \Drupal::getContainer()->get('civicrm')->initialize();
     $this->form = $form;
     $this->form_state = &$form_state;
@@ -190,10 +187,10 @@ class wf_crm_admin_form {
       '#prefix' => '<div id="no-js-button-wrapper" class="messages warning">',
       '#suffix' => '<div>' . t('You have Javascript disabled. You will need to click this button after changing any option to see the result.') . '</div></div>',
     );
-    $this->form['webform_civicrm'] = array('#type' => 'vertical_tabs');
+    $this->form['webform_civicrm'] = ['#type' => 'vertical_tabs'];
     // Display intro help to virgins
     /*
-     * @todo evaluate this; use state. also inline JS is not allowed in D8.
+     * @todo evaluate this; use \Drupal::state(). also inline JS is not allowed in D8.
     if (!variable_get('webform_civicrm_help_seen')) {
       variable_set('webform_civicrm_help_seen', TRUE);
       drupal_add_js('cj(function() {CRM.help("' . t('Welcome to Webform-CiviCRM') . '", {}, "' . url('webform-civicrm/help/intro') . '");});', array('type' => 'inline', 'scope' => 'footer'));
@@ -209,7 +206,7 @@ class wf_crm_admin_form {
   private function buildContactTab($n, $c) {
     list($contact_types, $sub_types) = wf_crm_get_contact_types();
     $this->form['contact_' . $n] = array(
-      '#type' => 'fieldset',
+      '#type' => 'details',
       '#title' => $n . '. ' . wf_crm_contact_label($n, $this->data),
       '#description' => $n > 1 ? NULL : t('Primary contact. Usually assumed to be the person filling out the form.') . '<br />' . t('Enable the "Existing Contact" field to autofill with the current user (or another contact).'),
       '#group' => 'webform_civicrm',

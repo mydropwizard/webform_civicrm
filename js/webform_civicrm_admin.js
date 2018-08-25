@@ -337,13 +337,13 @@ var wfCiviAdmin = (function ($, D) {
 
       $('#edit-nid', context).once('wf-civi').change(function() {
         if ($(this).is(':checked')) {
-          $('#wf-crm-configure-form .vertical-tabs, .form-item-number-of-contacts').removeAttr('style');
-          $('#wf-crm-configure-form .vertical-tabs-panes').removeClass('hidden');
+          $('.form-type-vertical-tabs, .form-item-number-of-contacts').removeAttr('style');
+          $('.vertical-tabs__panes').removeClass('hidden');
           $('[name="number_of_contacts"]').prop('disabled', false);
         }
         else {
-          $('#wf-crm-configure-form .vertical-tabs, .form-item-number-of-contacts').css('opacity', '0.4');
-          $('#wf-crm-configure-form .vertical-tabs-panes').addClass('hidden');
+          $('.form-type-vertical-tabs, .form-item-number-of-contacts').css('opacity', '0.4');
+          $('.vertical-tabs__panes').addClass('hidden');
           $('[name="number_of_contacts"]').prop('disabled', true);
         }
       }).change();
