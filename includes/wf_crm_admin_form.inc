@@ -1,6 +1,7 @@
 <?php
 
 use Drupal\Component\Utility\Html;
+use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Url;
 
 /**
@@ -2129,6 +2130,7 @@ function wf_crm_configure_form_submit($form, &$form_state) {
 /**
  * FAPI AJAX callback
  */
-function wf_crm_configure_form_ajax($form, $form_state) {
-  return wf_crm_aval($form, $form_state['triggering_element']['#ajax']['pathstr']);
+function wf_crm_configure_form_ajax(array $form, FormStateInterface $form_state) {
+  $triggering_element = $form_state->getTriggeringElement();
+  return wf_crm_aval($form, $triggering_element['#ajax']['pathstr']);
 }
