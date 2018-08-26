@@ -12,23 +12,62 @@ include_once __DIR__ . '/../../includes/wf_crm_admin_form.inc';
 
 class WebformCiviCRMSettingsForm extends FormBase {
 
+  /**
+   * @return \Drupal\webform\WebformInterface
+   */
+  public function getWebform() {
+    return $this->getRouteMatch()->getParameter('webform');
+  }
+
   public function getFormId() {
     return 'webform_civicrm_settings_form';
   }
 
   public function buildForm(array $form, FormStateInterface $form_state) {
-    /** @var \Drupal\webform\WebformInterface $webform */
-    $webform =$this->getRouteMatch()->getParameter('webform');
+    $webform = $this->getWebform();
     $admin_form = new \wf_crm_admin_form($form, $form_state, (object) [
       'nid' => $webform->id(),
       'title' => $this->getRouteMatch()->getParameter('webform')->label(),
-    ]);
+    ], $webform);
     $form = $admin_form->buildForm();;
     return $form;
   }
 
   public function submitForm(array &$form, FormStateInterface $form_state) {
+    $webform = $this->getWebform();
+    $handler_collection = $webform->getHandlers('webform_civicrm');
+    $instance_ids = $handler_collection->getInstanceIds();
+    $values = $form_state->getValues();
+
+    $remove_handler = empty($values['nid']);
+
+    /** @var \Drupal\webform\Plugin\WebformHandlerInterface $handler */
+    if (empty($instance_ids)) {
+      if ($remove_handler) {
+        $this->messenger()->addWarning('No changes made to CiviCRM settings');
+        return;
+      }
+      $handler_mananger = \Drupal::getContainer()->get('plugin.manager.webform.handler');
+      $handler = $handler_mananger->createInstance('webform_civicrm');
+      $handler->setWebform($webform);
+      $handler->setHandlerId('webform_civicrm');
+      $handler->setStatus(TRUE);
+      $webform->addWebformHandler($handler);
+    }
+    else {
+      $handler = $handler_collection->get(reset($instance_ids));
+
+      if ($remove_handler) {
+        $webform->deleteWebformHandler($handler);
+        $this->messenger()->addMessage('Removed CiviCRM');
+        return;
+      }
+    }
+
     // @todo push settings into the civicrm webform handler.
+
+    $webform->save();
+    $this->messenger()->addMessage('Saved CiviCRM settings');
   }
 
   /**

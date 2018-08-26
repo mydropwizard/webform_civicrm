@@ -3,6 +3,7 @@
 use Drupal\Component\Utility\Html;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Url;
+use Drupal\webform\WebformInterface;
 
 /**
  * @file
@@ -20,18 +21,27 @@ class wf_crm_admin_form {
   private $sets;
   private $settings;
   private $data;
+
+  /**
+   * The shim allowing us to slowly port this code.
+   *
+   * @var \Drupal\webform\WebformInterface
+   */
+  private $webform;
   /**
    * @var array
    */
   public static $fieldset_entities = array('contact', 'activity', 'case', 'grant');
 
-  function __construct($form, &$form_state, $node) {
+  function __construct($form, FormStateInterface $form_state, $node, WebformInterface $webform) {
     \Drupal::getContainer()->get('civicrm')->initialize();
     $this->form = $form;
-    $this->form_state = &$form_state;
+    $this->form_state = $form_state;
     $this->node = &$node;
     $this->fields = wf_crm_get_fields();
     $this->sets = wf_crm_get_fields('sets');
+
+    $this->webform = $webform;
   }
 
   /**
@@ -170,11 +180,11 @@ class wf_crm_admin_form {
    * Build fields for form intro
    */
   private function buildFormIntro() {
+    $has_handler = $this->webform->getHandlers('webform_civicrm');
     $this->form['nid'] = array(
       '#type' => 'checkbox',
       '#title' => t('Enable CiviCRM Processing'),
-      '#default_value' => !empty($this->settings['nid']),
-      '#return_value' => $this->node->nid,
+      '#default_value' => $has_handler->count(),
     );
     $this->help($this->form['nid'], 'intro', t('Webform-CiviCRM Integration'));
     $this->form['number_of_contacts'] = array(
