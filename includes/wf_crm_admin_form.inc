@@ -1393,7 +1393,7 @@ class wf_crm_admin_form {
     eval('$target_container = &$this->form[\'' . str_replace(':', "']['", substr($path, 0, strrpos($path, ':'))) . "'];");
     $id = 'civicrm-ajax-' . str_replace(array(':', '_'), '-', $path);
     $control_container[$control_element]['#ajax'] = array(
-      'callback' => 'wf_crm_configure_form_ajax',
+      'callback' => '\Drupal\webform_civicrm\Form\WebformCiviCRMSettingsForm::pathstrAjaxRefresh',
       'pathstr' => $path,
       'wrapper' => $id,
       'effect' => 'fade',
@@ -2125,12 +2125,4 @@ function wf_crm_configure_form_submit($form, &$form_state) {
   $node = node_load($form_state['storage']['nid']);
   $admin_form = new wf_crm_admin_form($form, $form_state, $node);
   $admin_form->postProcess();
-}
-
-/**
- * FAPI AJAX callback
- */
-function wf_crm_configure_form_ajax(array $form, FormStateInterface $form_state) {
-  $triggering_element = $form_state->getTriggeringElement();
-  return wf_crm_aval($form, $triggering_element['#ajax']['pathstr']);
 }

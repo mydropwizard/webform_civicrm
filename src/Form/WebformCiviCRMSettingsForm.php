@@ -2,6 +2,7 @@
 
 namespace Drupal\webform_civicrm\Form;
 
+use Drupal\Component\Utility\NestedArray;
 use Drupal\Core\Form\FormBase;
 use Drupal\Core\Form\FormStateInterface;
 
@@ -28,6 +29,23 @@ class WebformCiviCRMSettingsForm extends FormBase {
 
   public function submitForm(array &$form, FormStateInterface $form_state) {
     // @todo push settings into the civicrm webform handler.
+  }
+
+  /**
+   * AJAX callback for elements with a pathstr.
+   *
+   * @param array $form
+   *   The complete form.
+   * @param \Drupal\Core\Form\FormStateInterface $form_state
+   *   The form state.
+   *
+   * @return array
+   *   The form element to refresh.
+   */
+  public static function pathstrAjaxRefresh(array &$form, FormStateInterface $form_state) {
+    $triggering_element = $form_state->getTriggeringElement();
+    $element = NestedArray::getValue($form, explode(':', $triggering_element['#ajax']['pathstr']));
+    return $element;
   }
 
 }
