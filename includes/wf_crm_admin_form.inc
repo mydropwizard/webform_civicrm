@@ -114,7 +114,7 @@ class wf_crm_admin_form {
    * On rebuilding the form
    */
   private function rebuildForm() {
-    $this->settings = wf_crm_aval($this->form_state['storage'], 'vals', $this->form_state['values']);
+    $this->settings = wf_crm_aval($this->form_state->getStorage(), 'vals', $this->form_state->getValues());
     $this->rebuildData();
     // Hack for nicer UX: pre-check phone, email, etc when user increments them
     if (!empty($_POST['_triggering_element_name'])) {
@@ -136,7 +136,8 @@ class wf_crm_admin_form {
         }
       }
     }
-    unset($this->form_state['storage']['vals']);
+    // This replaces: unset($this->form_state['storage']['vals']);
+    $this->form_state->set('vals', NULL);
   }
 
   /**
@@ -965,7 +966,7 @@ class wf_crm_admin_form {
       $num = wf_crm_aval($this->data, "membership:{$c}:number_of_membership", 0);
       $this->form['membership'][$c]["membership_{$c}_number_of_membership"] = array(
         '#type' => 'select',
-        '#title' => t('Number of Memberships for :contact', array(':contact' => wf_crm_contact_label($c, $this->data, 'wrap'))),
+        '#title' => t('Number of Memberships for @contact', array('@contact' => wf_crm_contact_label($c, $this->data, 'wrap'))),
         '#default_value' => $num,
         '#options' => range(0, 9),
         '#prefix' => '<div class="number-of">',
@@ -1188,8 +1189,8 @@ class wf_crm_admin_form {
     // Handle ajax submission from "webform_tracking_mode" mini-form below
     if (!empty($_POST['webform_tracking_mode']) && $_POST['webform_tracking_mode'] == 'strict') {
       variable_set('webform_tracking_mode', 'strict');
-      drupal_set_message(t('Webform anonymous user tracking has been updated to use the strict method. You may revisit this option any time on the global <a !link>Webform Settings</a> page.',
-        array('!link' => 'href="/admin/config/content/webform" target="_blank"')
+      drupal_set_message(t('Webform anonymous user tracking has been updated to use the strict method. You may revisit this option any time on the global <a :link>Webform Settings</a> page.',
+        array(':link' => 'href="/admin/config/content/webform" target="_blank"')
       ));
     }
     // Mini-form to configure submit limit without leaving the page
@@ -1230,6 +1231,8 @@ class wf_crm_admin_form {
    */
   private function defaultSettings() {
     return array(
+      // @todo remove hack. added to ensure form is enabled by default
+      'nid' => 'fake',
       'data' => array(
         'contact' => array(
           1 => array(
@@ -1454,8 +1457,8 @@ class wf_crm_admin_form {
           'civicrm_' . $c . '_contact_1_contact_first_name' => 'create_civicrm_webform_element',
           'civicrm_' . $c . '_contact_1_contact_last_name' => 'create_civicrm_webform_element',
         );
-        $link = array('!link' => 'href="https://docs.civicrm.org/sysadmin/en/latest/integration/drupal/webform/#cloning-a-contact" target="_blank"');
-        drupal_set_message(t('Tip: Consider using the clone feature to add multiple similar contacts. (<a !link>more info</a>)', $link), 'status', FALSE);
+        $link = array(':link' => 'href="https://docs.civicrm.org/sysadmin/en/latest/integration/drupal/webform/#cloning-a-contact" target="_blank"');
+        drupal_set_message(t('Tip: Consider using the clone feature to add multiple similar contacts. (<a :link>more info</a>)', $link), 'status', FALSE);
       }
     }
     // Store meta settings, i.e. number of email for contact 1

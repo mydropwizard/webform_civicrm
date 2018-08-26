@@ -1498,7 +1498,7 @@ function wf_crm_contact_label($n, $data = array(), $html = 'escape') {
     $label = Html::escape($label);
   }
   if ($html == 'wrap') {
-    $label = '<span class="contact-label number-' . $n . '">' . $label . '</span>';
+    $label = \Drupal\Core\Render\Markup::create('<span class="contact-label number-' . $n . '">' . $label . '</span>');
   }
   return $label;
 }

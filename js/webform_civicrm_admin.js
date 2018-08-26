@@ -391,7 +391,7 @@ var wfCiviAdmin = (function ($, D) {
       });
 
       $('#edit-number-of-contacts', context).once('wf-civi').change(function() {
-        $('#wf-crm-configure-form')[0].submit();
+        $('.webform-civicrm-settings-form')[0].submit();
       });
 
       // Show/hide custom relationship fields
