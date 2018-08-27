@@ -62,7 +62,9 @@ class CivicrmWebformHandler extends WebformHandlerBase {
       ],
       'confirm_subscription' => 1,
       'create_fieldsets' => 1,
-      'new_contact_source' => $this->webform ? Html::escape($this->webform->label()) : '',
+      // The default configuration is invoked before a webform is set to the
+      // plugin, so we have to default this to empty.
+      'new_contact_source' => '',
       'civicrm_1_contact_1_contact_first_name' => 'create_civicrm_webform_element',
       'civicrm_1_contact_1_contact_last_name' => 'create_civicrm_webform_element',
       'civicrm_1_contact_1_contact_existing' => 'create_civicrm_webform_element',

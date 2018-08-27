@@ -85,6 +85,7 @@ class WebformCiviCRMSettingsForm extends FormBase {
       'nid' => $webform->id(),
       'title' => $this->getRouteMatch()->getParameter('webform')->label(),
     ], $webform);
+    $form_state->cleanValues();
     $admin_form->setSettings($form_state->getValues());
     $admin_form->rebuildData();
     $settings = $admin_form->getSettings();

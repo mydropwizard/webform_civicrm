@@ -1,6 +1,5 @@
 <?php
 
-use Drupal\Component\Utility\Html;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Url;
 use Drupal\webform\WebformInterface;
@@ -1183,7 +1182,7 @@ class wf_crm_admin_form {
       '#title' => t('Source Label'),
       '#maxlength' => 255,
       '#size' => 30,
-      '#default_value' => $this->settings['new_contact_source'],
+      '#default_value' => empty($this->settings['new_contact_source']) ? $this->webform->label() : $this->settings['new_contact_source'],
       '#description' => t('Optional "source" label for any new contact/participant/membership created by this webform.'),
     );
   }
