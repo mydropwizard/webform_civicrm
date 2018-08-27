@@ -29,7 +29,7 @@ function wf_crm_field_options($field, $context, $data) {
       $field += $fields[$table . '_' . $name];
     }
     if ($name === 'contact_sub_type') {
-      list($contact_types, $sub_types) = wf_crm_get_contact_types();
+      list(, $sub_types) = wf_crm_get_contact_types();
       $ret = wf_crm_aval($sub_types, $data['contact'][$c]['contact'][1]['contact_type'], array());
     }
     elseif ($name === 'relationship_type_id') {
@@ -77,7 +77,7 @@ function wf_crm_field_options($field, $context, $data) {
     }
     // Not a real field so can't call getoptions for this one
     elseif ($table == 'membership' && $name == 'num_terms') {
-      $ret = drupal_map_assoc(range(1, 9));
+      $ret = array_combine(range(1, 9), range(1, 9));
     }
     // Aside from the above special cases, most lists can be fetched from api.getoptions
     else {
@@ -1514,7 +1514,7 @@ function wf_crm_contact_label($n, $data = array(), $html = 'escape') {
 function wf_crm_explode_key($key) {
   $pieces = explode('_', $key, 6);
   if (count($pieces) != 6 || $pieces[0] !== 'civicrm') {
-    return FALSE;
+    return NULL;
   }
   return $pieces;
 }
@@ -1585,7 +1585,7 @@ function wf_civicrm_api($entity, $operation, $params) {
     if (isset($params['credit_card_number'])) {
       $params['credit_card_number'] = "xxxxxxxxxxxx".substr($params['credit_card_number'], -4);
     }
-    watchdog('webform_civicrm',
+    \Drupal::logger('webform_civicrm')->error(
       'The CiviCRM "%function" API returned the error: "%msg" when called by function "!fn" on line !line of !file with parameters: "!params"',
       array(
         '%function' => $entity . ' ' . $operation,
@@ -1594,8 +1594,8 @@ function wf_civicrm_api($entity, $operation, $params) {
         '!line' => $bt[$n]['line'],
         '!file' => array_pop($file),
         '!params' => print_r($params, TRUE),
-      ),
-      WATCHDOG_ERROR);
+      )
+    );
   }
   return $result;
 }
@@ -1697,6 +1697,8 @@ function wf_crm_address_fields() {
 
 /**
  * Returns a count of children of a webform component
+ *
+ * @deprecated components do not exist like this.
  *
  * @param int $nid
  * @param int $id
