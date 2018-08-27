@@ -19,10 +19,18 @@ class WebformCiviCRMSettingsForm extends FormBase {
     return $this->getRouteMatch()->getParameter('webform');
   }
 
+  /**
+   * {@inheritdoc}
+   */
   public function getFormId() {
     return 'webform_civicrm_settings_form';
   }
 
+  /**
+   * {@inheritdoc}
+   *
+   * @todo slowly move parts of the D7 handling into here.
+   */
   public function buildForm(array $form, FormStateInterface $form_state) {
     $webform = $this->getWebform();
     $admin_form = new \wf_crm_admin_form($form, $form_state, (object) [
@@ -33,6 +41,11 @@ class WebformCiviCRMSettingsForm extends FormBase {
     return $form;
   }
 
+  /**
+   * {@inheritdoc}
+   *
+   * @todo find a more elegant way to handle the handler creation/removal.
+   */
   public function submitForm(array &$form, FormStateInterface $form_state) {
     $webform = $this->getWebform();
     $handler_collection = $webform->getHandlers('webform_civicrm');
@@ -58,13 +71,27 @@ class WebformCiviCRMSettingsForm extends FormBase {
       $handler = $handler_collection->get(reset($instance_ids));
 
       if ($remove_handler) {
+        if (!$handler->getHandlerId()) {
+          $handler->setHandlerId('webform_civicrm');
+        }
         $webform->deleteWebformHandler($handler);
         $this->messenger()->addMessage('Removed CiviCRM');
         return;
       }
     }
 
-    // @todo push settings into the civicrm webform handler.
+    // @todo need to implement \wf_crm_admin_form::postProcess logic.
+    $admin_form = new \wf_crm_admin_form($form, $form_state, (object) [
+      'nid' => $webform->id(),
+      'title' => $this->getRouteMatch()->getParameter('webform')->label(),
+    ], $webform);
+    $admin_form->setSettings($form_state->getValues());
+    $admin_form->rebuildData();
+    $settings = $admin_form->getSettings();
+    $handler_configuration = $handler->getConfiguration();
+    $handler_configuration['settings'] = $settings;
+    $handler->setConfiguration($handler_configuration);
+
 
     $webform->save();
     $this->messenger()->addMessage('Saved CiviCRM settings');

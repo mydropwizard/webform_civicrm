@@ -117,7 +117,18 @@ class wf_crm_admin_form {
    * Initialize form on first view
    */
   private function initializeForm() {
-    $this->settings = isset($this->node->webform_civicrm) ? $this->node->webform_civicrm : $this->defaultSettings();
+    $handler_collection = $this->webform->getHandlers('webform_civicrm');
+    if ($handler_collection->count()) {
+      /** @var \Drupal\webform\Plugin\WebformHandlerInterface $handler */
+      $handler = $handler_collection->get('webform_civicrm');
+    }
+    else {
+      $handler_mananger = \Drupal::getContainer()->get('plugin.manager.webform.handler');
+      $handler = $handler_mananger->createInstance('webform_civicrm');
+      $handler->setWebform($this->webform);
+    }
+    $handler_configuration = $handler->getConfiguration();
+    $this->settings = $handler_configuration['settings'];
     $this->data = &$this->settings['data'];
   }
 
@@ -125,7 +136,10 @@ class wf_crm_admin_form {
    * On rebuilding the form
    */
   private function rebuildForm() {
-    $this->settings = wf_crm_aval($this->form_state->getStorage(), 'vals', $this->form_state->getValues());
+    // The following should mimic this line.
+    // $this->settings = wf_crm_aval($this->form_state->getStorage(), 'vals', $this->form_state->getValues());
+    $this->settings = $this->form_state->get('vals') ?: $this->form_state->getValues();
+
     $this->rebuildData();
     // Hack for nicer UX: pre-check phone, email, etc when user increments them
     if (!empty($_POST['_triggering_element_name'])) {
@@ -1238,37 +1252,6 @@ class wf_crm_admin_form {
   }
 
   /**
-   * Set defaults when visiting the civicrm tab for the first time
-   */
-  private function defaultSettings() {
-    return array(
-      // @todo remove hack. added to ensure form is enabled by default
-      'nid' => 'fake',
-      'data' => array(
-        'contact' => array(
-          1 => array(
-            'contact' => array(
-              1 => array(
-                'contact_type' => 'individual',
-                'contact_sub_type' => array(),
-              ),
-            ),
-          ),
-        ),
-        'reg_options' => array(
-          'validate' => 1,
-        ),
-      ),
-      'confirm_subscription' => 1,
-      'create_fieldsets' => 1,
-      'new_contact_source' => Html::escape($this->node->title),
-      'civicrm_1_contact_1_contact_first_name' => 'create_civicrm_webform_element',
-      'civicrm_1_contact_1_contact_last_name' => 'create_civicrm_webform_element',
-      'civicrm_1_contact_1_contact_existing' => 'create_civicrm_webform_element',
-    );
-  }
-
-  /**
    * Build a field item for the admin form
    *
    * @param string $fid
@@ -1417,22 +1400,28 @@ class wf_crm_admin_form {
 
   /**
    * Build select all/none js links for a fieldset
+   *
+   * @return array
+   *   The build information.
    */
   private function addToggle($name) {
-    return array('#markup' =>
-    '<div class="web-civi-js-select">
+    return [
+      '#markup' => \Drupal\Core\Render\Markup::create(
+        '<div class="web-civi-js-select">
       <a href="javascript:wfCiviAdmin.selectReset(' . "'all', '#$name'" . ')">' . t('Select All') . '</a> |
       <a href="javascript:wfCiviAdmin.selectReset(' . "'none', '#$name'" . ')">' . t('Select None') . '</a> |
       <a href="javascript:wfCiviAdmin.selectReset(' . "'reset', '#$name'" . ')">' . t('Restore') . '</a>
-    </div>',
-    );
+    </div>'),
+    ];
   }
 
   /**
    * Build $this->data array for webform settings; called while rebuilding or post-processing the admin form.
+   *
+   * Made public so we can invoke from D8 form, for now.
    */
-  private function rebuildData() {
-    $this->settings['data'] = array('contact' => array());
+  public function rebuildData() {
+    $this->settings['data'] = ['contact' => []];
     $this->data = &$this->settings['data'];
     list($contact_types, $sub_types) = wf_crm_get_contact_types();
     for ($c = 1; $c <= $this->settings['number_of_contacts']; ++$c) {
@@ -1537,12 +1526,19 @@ class wf_crm_admin_form {
 
   /**
    * Submission handler, saves CiviCRM options for a Webform node
+   *
+   * Review this section and translate it to D8
+   * @todo this is what sets the elements on the webform.
+   *
+   * This needs to be reworked to support the checking of D8 elements and their removal.
    */
   public function postProcess() {
     $button = $this->form_state['clicked_button']['#id'];
     $nid = $this->node->nid;
     $this->settings = wf_crm_aval($this->form_state, 'storage:vals', $this->form_state['values']);
 
+    // NOTE: This is just handling if the integration was removed / cancelled?
+    // VERIFY: This should be covered.
     if ((empty($this->node->webform_civicrm) && !$this->settings['nid']) || $button == 'edit-cancel') {
       $this->form_state['rebuild'] = TRUE;
       unset($this->form_state['storage']['msg']);
@@ -1620,15 +1616,8 @@ class wf_crm_admin_form {
       }
     }
 
-    // Disable CiviCRM for this form
-    if (!$this->settings['nid']) {
-      $this->disable();
-      drupal_set_message(t('CiviCRM processing for this form is now disabled.'));
-    }
-
     // CiviCRM enabled
     else {
-      webform_ensure_record($this->node);
       $this->rebuildData();
       if (!$this->settings['toggle_message']) {
         $this->settings['message'] = '';
@@ -2010,15 +1999,6 @@ class wf_crm_admin_form {
     return $options ? key($options) : 0;
   }
 
-  /**
-   * Delete civicrm settings for this webform.
-   */
-  private function disable() {
-    db_delete('webform_civicrm_forms')
-      ->condition('nid', $this->node->nid)
-      ->execute();
-  }
-
   private function contactRefOptions($exclude = NULL) {
     $ret = array();
     foreach ($this->data['contact'] as $num => $contact) {
@@ -2043,6 +2023,40 @@ class wf_crm_admin_form {
     list(, $c, $ent) =  wf_crm_explode_key($field_key);
     $type = in_array($ent, self::$fieldset_entities) ? $ent : 'contact';
     return !isset($this->node->webform_civicrm['data'][$type][$c]);
+  }
+
+  /**
+   * Returns the data.
+   *
+   * @note This was added just to expose the property data during port.
+   *
+   * @return array
+   */
+  public function getData() {
+    return $this->data;
+  }
+
+  /**
+   * Returns the settings.
+   *
+   * @note This was added just to expose the property data during port.
+   *
+   * @return array
+   */
+  public function getSettings() {
+    return $this->settings;
+  }
+
+  /**
+   * A shim to set the settings manually.
+   *
+   * Replicates code in \wf_crm_admin_form::postProcess where the settings
+   * property is set before rebuilding data.
+   *
+   * @param array $settings
+   */
+  public function setSettings(array $settings) {
+    $this->settings = $settings;
   }
 
   /**
