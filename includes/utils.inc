@@ -6,6 +6,7 @@
  */
 
 use Drupal\Component\Utility\Html;
+use Drupal\webform\WebformInterface;
 
 /**
  * Get options for a specific field
@@ -441,8 +442,8 @@ function wf_crm_get_matching_rules($contact_type) {
 /**
  * Get ids or values of enabled CiviCRM fields for a webform.
  *
- * @param stdClass $node
- *   Node object
+ * @param \Drupal\webform\WebformInterface $webform
+ *   The webform.
  * @param array|null $submission
  *   (optional) if supplied, will match field keys with submitted values
  * @param boolean $show_all
@@ -450,13 +451,23 @@ function wf_crm_get_matching_rules($contact_type) {
  *
  * @return array of enabled fields
  */
-function wf_crm_enabled_fields($node, $submission = NULL, $show_all = FALSE) {
+function wf_crm_enabled_fields(WebformInterface $webform, $submission = NULL, $show_all = FALSE) {
   $enabled = array();
-  if (!empty($node->webform['components']) && (!empty($node->webform_civicrm) || $show_all)) {
+  $elements = $webform->getElementsDecoded();
+  if (!empty($elements) && ($show_all)) {
+    $handler_collection = $webform->getHandlers('webform_civicrm');
+    $instance_ids = $handler_collection->getInstanceIds();
+    // No handler added yet, which means CiviCRM is not configured.
+    if (empty($instance_ids)) {
+      return $enabled;
+    }
+    $handler = $handler_collection->get(reset($instance_ids));
+    $handler_configuration = $handler->getConfiguration();
+
     $fields = wf_crm_get_fields();
-    foreach ($node->webform['components'] as $c) {
-      $exp = explode('_', $c['form_key'], 5);
-      $customGroupFieldsetKey = "";
+    foreach ($elements as $key => $c) {
+      $exp = explode('_', $key, 5);
+      $customGroupFieldsetKey = '';
       if (count($exp) == 5) {
         list($lobo, $i, $ent, $n, $id) = $exp;
         if ($lobo != 'civicrm') {
@@ -472,14 +483,14 @@ function wf_crm_enabled_fields($node, $submission = NULL, $show_all = FALSE) {
           }
         }
         if ((isset($fields[$id]) || $id == 'fieldset_fieldset' || $id == $customGroupFieldsetKey . '_fieldset') && is_numeric($i) && is_numeric($n)) {
-          if (!$show_all && ($ent == 'contact' || $ent == 'participant') && empty($node->webform_civicrm['data']['contact'][$i])) {
+          if (!$show_all && ($ent == 'contact' || $ent == 'participant') && empty($handler_configuration['settings']['data']['contact'][$i])) {
             continue;
           }
           if ($submission) {
-            $enabled[$c['form_key']] = wf_crm_aval($submission, $c['cid'], NULL, TRUE);
+            $enabled[$key] = wf_crm_aval($submission, $c['cid'], NULL, TRUE);
           }
           else {
-            $enabled[$c['form_key']] = $c['cid'];
+            $enabled[$key] = $key;
           }
         }
       }
@@ -549,16 +560,16 @@ function wf_crm_get_fields($var = 'fields') {
     // Setting 'expose_list' allows the value to be set on the config form
     // Set label for 'empty_option' for exposed lists that do not require input
     $fields['contact_contact_sub_type'] = array(
-      'name' => t('Type of @contact'),
+      'name' => (string) t('Type of @contact'),
       'type' => 'select',
       'extra' => array('multiple' => 1, 'civicrm_live_options' => 1),
       'expose_list' => TRUE,
     );
     $fields['contact_existing'] = array(
-      'name' => t('Existing Contact'),
+      'name' => (string) t('Existing Contact'),
       'type' => 'civicrm_contact',
       'extra' => array(
-        'search_prompt' => t('- Choose existing -'),
+        'search_prompt' => (string) t('- Choose existing -'),
       ),
     );
     // Organization / household names

@@ -5,6 +5,7 @@ namespace Drupal\webform_civicrm\Form;
 use Drupal\Component\Utility\NestedArray;
 use Drupal\Core\Form\FormBase;
 use Drupal\Core\Form\FormStateInterface;
+use Drupal\webform\Plugin\WebformHandlerInterface;
 
 include_once __DIR__ . '/../../includes/utils.inc';
 include_once __DIR__ . '/../../includes/wf_crm_admin_help.inc';
@@ -93,8 +94,9 @@ class WebformCiviCRMSettingsForm extends FormBase {
     $handler_configuration['settings'] = $settings;
     $handler->setConfiguration($handler_configuration);
 
-
+    $admin_form->postProcess();
     $webform->save();
+
     $this->messenger()->addMessage('Saved CiviCRM settings');
   }
 

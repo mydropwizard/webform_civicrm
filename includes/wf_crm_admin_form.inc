@@ -65,7 +65,7 @@ class wf_crm_admin_form {
       $this->rebuildForm();
     }
     // Merge in existing fields
-    $existing = array_keys(wf_crm_enabled_fields($this->node, NULL, TRUE));
+    $existing = array_keys(wf_crm_enabled_fields($this->webform, NULL, TRUE));
     $this->settings += array_fill_keys($existing, 'create_civicrm_webform_element');
 
     // Sort fields by set
@@ -1532,20 +1532,16 @@ class wf_crm_admin_form {
    * This needs to be reworked to support the checking of D8 elements and their removal.
    */
   public function postProcess() {
-    $button = $this->form_state['clicked_button']['#id'];
+    $button = $this->form_state->getTriggeringElement()['#id'];
     $nid = $this->node->nid;
-    $this->settings = wf_crm_aval($this->form_state, 'storage:vals', $this->form_state['values']);
+    $this->settings = $this->form_state->getValues();
 
-    // NOTE: This is just handling if the integration was removed / cancelled?
-    // VERIFY: This should be covered.
-    if ((empty($this->node->webform_civicrm) && !$this->settings['nid']) || $button == 'edit-cancel') {
-      $this->form_state['rebuild'] = TRUE;
-      unset($this->form_state['storage']['msg']);
-      return;
-    }
-    unset($this->form_state['storage']);
+    $handler_collection = $this->webform->getHandlers('webform_civicrm');
+    $instance_ids = $handler_collection->getInstanceIds();
+    $handler = $handler_collection->get(reset($instance_ids));
+    $handler_configuration = $handler->getConfiguration();
 
-    $enabled = $existing = wf_crm_enabled_fields($this->node, NULL, TRUE);
+    $enabled = $existing = wf_crm_enabled_fields($this->webform, NULL, TRUE);
     $delete_me = $this->getFieldsToDelete($enabled);
 
     // Display a confirmation before deleting fields
@@ -1572,7 +1568,6 @@ class wf_crm_admin_form {
 
     module_load_include('inc', 'webform', 'includes/webform.components');
     module_load_include('inc', 'webform_civicrm', 'includes/contact_component');
-    $this->form_state['redirect'] = 'node/' . $nid . '/webform';
 
     // Delete/disable fields
     $deleted = 0;
@@ -1652,7 +1647,10 @@ class wf_crm_admin_form {
                   'form_key' => $key,
                   'weight' => $i,
                 );
-                self::insertComponent($field, $enabled, $this->settings, $this->isNewFieldset($key));
+                $previous_data = $handler_configuration['settings'];
+                $wf_crm_key = wf_crm_explode_key($key);
+                $type = in_array($wf_crm_key[2], self::$fieldset_entities) ? $wf_crm_key[2] : 'contact';
+                self::insertComponent($field, $enabled, $this->settings, !isset($previous_data['data'][$type][$wf_crm_key[1]]));
                 $created[] = $field['name'];
                 if (isset($field['civicrm_condition'])) {
                   $this->addConditionalRule($field, $enabled);
@@ -1698,15 +1696,22 @@ class wf_crm_admin_form {
       }
 
       // Create record
-      if (empty($this->node->webform_civicrm)) {
-        drupal_write_record('webform_civicrm_forms', $this->settings);
-        drupal_set_message(t('CiviCRM processing for this form is now enabled.'));
+      $handler_configuration['settings'] = $this->settings;
+      $handler->setConfiguration($handler_configuration);
+
+      $webform_elements = $this->webform->getElementsDecoded();
+      foreach ($enabled as $enabled_key => $enabled_element) {
+        $webform_elements[$enabled_key] = [
+          '#title' => (string) $enabled_element['name'],
+          '#type' => $enabled_element['type'],
+          '#webform_civicrm' => $enabled_element['form_key'],
+          // Disabled for now due to t() pollution and YAML dies.
+          // '#extra' => $enabled_element['extra'],
+          '#weight' => $enabled_element['weight']
+        ];
+        $stop = null;
       }
-      // Update record
-      else {
-        drupal_write_record('webform_civicrm_forms', $this->settings, 'nid');
-        drupal_set_message(t('Your CiviCRM form settings have been updated.'));
-      }
+      $this->webform->setElements($webform_elements);
       // Update existing contact fields
       foreach ($existing as $fid => $id) {
         if (substr($fid, -8) === 'existing') {
@@ -1714,14 +1719,8 @@ class wf_crm_admin_form {
         }
       }
     }
+    $stop = null;
 
-    // Make sure the updates are visible to anonymous users.
-    cache_clear_all();
-
-    // Clear the entity cache.
-    if (module_exists('entitycache')) {
-      cache_clear_all($nid, 'cache_entity_node');
-    }
   }
 
   /**
@@ -1897,16 +1896,14 @@ class wf_crm_admin_form {
     }
     // Merge defaults and create webform component
     $field += array('extra' => array());
-    if ($defaults = webform_component_invoke($field['type'], 'defaults')) {
-      $field += $defaults;
-    }
-    if (isset($enabled[$field['form_key']])) {
-      $field['cid'] = $enabled[$field['form_key']];
-      webform_component_update($field);
-    }
-    else {
-      $enabled[$field['form_key']] = webform_component_insert($field);
-    }
+
+    // @todo invoke \Drupal\webform\Plugin\WebformElementInterface::getDefaultProperties
+    // if ($defaults = webform_component_invoke($field['type'], 'defaults')) {
+    //   $field += $defaults;
+    // }
+
+    $enabled[$field['form_key']] = $field;
+    $stop =null;
   }
 
   /**
