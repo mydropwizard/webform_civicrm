@@ -1895,7 +1895,7 @@ class wf_crm_admin_form {
       self::addPageBreak($field);
     }
     // Merge defaults and create webform component
-    $field += array('extra' => array());
+    $field += ['extra' => []];
 
     // @todo invoke \Drupal\webform\Plugin\WebformElementInterface::getDefaultProperties
     // if ($defaults = webform_component_invoke($field['type'], 'defaults')) {
@@ -1903,7 +1903,6 @@ class wf_crm_admin_form {
     // }
 
     $enabled[$field['form_key']] = $field;
-    $stop =null;
   }
 
   /**
