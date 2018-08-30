@@ -5,6 +5,7 @@
  * Contains webform_civicrm.module.
  */
 
+use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Routing\RouteMatchInterface;
 
 /**
@@ -21,6 +22,16 @@ function webform_civicrm_help($route_name, RouteMatchInterface $route_match) {
 
     default:
   }
+}
+
+/**
+ * Validation callback for webform submissions.
+ */
+function wf_crm_validate($form, FormStateInterface $form_state) {
+  include_once __DIR__ . '/includes/wf_crm_webform_base.inc';
+  include_once __DIR__ . '/includes/wf_crm_webform_postprocess.inc';
+  $processor = wf_crm_webform_postprocess::singleton($form['#node']);
+  // $processor->validate($form, $form_state);
 }
 
 /**
