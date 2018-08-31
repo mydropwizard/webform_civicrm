@@ -1618,12 +1618,14 @@ class wf_crm_admin_form {
       }
       // Index disabled components
       $disabled = array();
+      // @todo there is no disabled?
+      /*
       foreach (wf_crm_aval($this->node->webform, 'components', array()) as $field) {
         if (substr($field['form_key'], 0, 9) === 'disabled_') {
           $field['form_key'] = 'civicrm' . substr($field['form_key'], 8);
           $disabled[$field['form_key']] = $field;
         }
-      }
+      }*/
 
       $i = 0;
       $created = array();
