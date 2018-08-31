@@ -1,5 +1,6 @@
 <?php
 
+use Drupal\Component\Render\FormattableMarkup;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Url;
 use Drupal\webform\WebformInterface;
@@ -1650,9 +1651,15 @@ class wf_crm_admin_form {
                   'weight' => $i,
                 );
                 $previous_data = $handler_configuration['settings'];
-                $wf_crm_key = wf_crm_explode_key($key);
-                $type = in_array($wf_crm_key[2], self::$fieldset_entities) ? $wf_crm_key[2] : 'contact';
-                self::insertComponent($field, $enabled, $this->settings, !isset($previous_data['data'][$type][$wf_crm_key[1]]));
+                list(, $c, $ent) =  wf_crm_explode_key($key);
+                $type = in_array($ent, self::$fieldset_entities) ? $ent : 'contact';
+                $create = !isset($previous_data['data'][$type][$c]);
+                /*
+    list(, $c, $ent) =  wf_crm_explode_key($field_key);
+    $type = in_array($ent, self::$fieldset_entities) ? $ent : 'contact';
+    return !isset($this->node->webform_civicrm['data'][$type][$c]);
+                 */
+                self::insertComponent($field, $enabled, $this->settings, !isset($previous_data['data'][$type][$c]));
                 $created[] = $field['name'];
                 if (isset($field['civicrm_condition'])) {
                   $this->addConditionalRule($field, $enabled);
@@ -1707,8 +1714,8 @@ class wf_crm_admin_form {
           '#title' => (string) $enabled_element['name'],
           '#type' => $enabled_element['type'],
           '#webform_civicrm' => $enabled_element['form_key'],
-          // Disabled for now due to t() pollution and YAML dies.
-          // '#extra' => $enabled_element['extra'],
+          // Webform uses YAML dump, which dies on FormattableMarkup.
+          '#extra' => array_map([get_called_class(), 'stringifyFormattableMarkup'], $enabled_element['extra']),
           '#weight' => $enabled_element['weight']
         ];
         $stop = null;
@@ -1722,7 +1729,18 @@ class wf_crm_admin_form {
       }
     }
     $stop = null;
+  }
 
+  public static function stringifyFormattableMarkup($data) {
+    if (is_array($data)) {
+      return array_map([get_called_class(), 'stringifyFormattableMarkup'], $data);
+    }
+    elseif ($data instanceof FormattableMarkup) {
+      return (string) $data;
+    }
+    else {
+      return $data;
+    }
   }
 
   /**
@@ -1877,6 +1895,10 @@ class wf_crm_admin_form {
           $field['extra']['multiple'] = 1;
         }
       }
+    }
+    if ($field['type'] == 'civicrm_contact') {
+      $field['extra']['contact_type'] = $contact_type;
+      $stop = null;
     }
     if (isset($field['value_callback'])) {
       $method = 'get_default_' . $table . '_' . $name;
