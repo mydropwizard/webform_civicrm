@@ -419,7 +419,7 @@ class wf_crm_admin_form {
     $tokens = '<strong>' . t('Tokens for :contact', array(':contact' => wf_crm_contact_label(1, $this->data, TRUE))) . ':</strong> [' . implode('], [', wf_crm_get_fields('tokens')) . '].';
 
     $this->form['prefix'] = array(
-      '#type' => 'fieldset',
+      '#type' => 'details',
       '#title' => t('Introduction Text'),
       '#description' => t('This text will appear at the top of the form. You may configure separate messages for known contacts (logged in users, or users following a hashed link from civimail) and unknown (anonymous) users.'),
       '#group' => 'webform_civicrm',
@@ -438,7 +438,7 @@ class wf_crm_admin_form {
       '#description' => t('No tokens available for unknown contacts.'),
     );
     $this->form['st_message'] = array(
-      '#type' => 'fieldset',
+      '#type' => 'details',
       '#title' => t('"Not You?" Message'),
       '#description' => t('Prompt for users who are logged in as, or following a hashed link for, someone else.'),
       '#group' => 'webform_civicrm',
@@ -465,7 +465,7 @@ class wf_crm_admin_form {
    */
   private function buildActivityTab() {
     $this->form['activityTab'] = array(
-      '#type' => 'fieldset',
+      '#type' => 'details',
       '#title' => t('Activities'),
       '#group' => 'webform_civicrm',
       '#attributes' => array('class' => array('civi-icon-activity')),
@@ -641,7 +641,7 @@ class wf_crm_admin_form {
       return;
     }
     $this->form['caseTab'] = array(
-      '#type' => 'fieldset',
+      '#type' => 'details',
       '#title' => t('Cases'),
       '#group' => 'webform_civicrm',
       '#attributes' => array('class' => array('civi-icon-case')),
@@ -746,7 +746,7 @@ class wf_crm_admin_form {
    */
   private function buildParticipantTab() {
     $this->form['participant'] = array(
-      '#type' => 'fieldset',
+      '#type' => 'details',
       '#title' => t('Event Registration'),
       '#group' => 'webform_civicrm',
       '#attributes' => array('class' => array('civi-icon-participant')),
@@ -756,11 +756,11 @@ class wf_crm_admin_form {
       '#type' => 'select',
       '#title' => t('Registration Method'),
       '#default_value' => $reg_type,
-      '#options' => array(
+      '#options' => [
         t('- None -'),
         'all' => t('Register all contacts for the same event(s)'),
         'separate' => t('Register each contact separately'),
-      ),
+      ],
     );
     $this->help($this->form['participant']['participant_reg_type'], 'participant_reg_type');
     $this->form['participant']['event_type'] = array(
@@ -817,7 +817,7 @@ class wf_crm_admin_form {
       '#type' => 'select',
       '#title' => t('Show Public Events'),
       '#default_value' => wf_crm_aval($this->data, 'reg_options:show_public_events', 'title'),
-      '#suffix' => '</div>',
+//      '#suffix' => '</div>',
       '#parents' => array('reg_options', 'show_public_events'),
       '#tree' => TRUE,
       '#options' => array(
@@ -981,7 +981,7 @@ class wf_crm_admin_form {
    */
   private function buildMembershipTab() {
     $this->form['membership'] = array(
-      '#type' => 'fieldset',
+      '#type' => 'details',
       '#title' => t('Memberships'),
       '#group' => 'webform_civicrm',
       '#attributes' => array('class' => array('civi-icon-membership')),
@@ -1022,7 +1022,7 @@ class wf_crm_admin_form {
    */
   private function buildContributionTab() {
     $this->form['contribution'] = array(
-      '#type' => 'fieldset',
+      '#type' => 'details',
       '#title' => t('Contribution'),
       '#group' => 'webform_civicrm',
       '#description' => t('In order to process live transactions for events, memberships, or contributions, select a contribution page and its billing fields will be included on the webform.'),
@@ -1071,7 +1071,7 @@ class wf_crm_admin_form {
       return;
     }
     $this->form['grantTab'] = array(
-      '#type' => 'fieldset',
+      '#type' => 'details',
       '#title' => t('Grants'),
       '#group' => 'webform_civicrm',
       '#attributes' => array('class' => array('civi-icon-grant')),
@@ -1134,9 +1134,9 @@ class wf_crm_admin_form {
    */
   private function buildOptionsTab() {
     $this->form['options'] = array(
-      '#type' => 'fieldset',
-      '#title' => t('Additional Options'),
+      '#type' => 'details',
       '#group' => 'webform_civicrm',
+      '#title' => t('Additional Options'),
       '#attributes' => array('class' => array('civi-icon-prefs')),
       '#description' => '<p>' .
         t('To have this form auto-filled for anonymous users, enable the "Existing Contact" field for :contact and send the following link from CiviMail:', array(':contact' => wf_crm_contact_label(1, $this->data, TRUE))) .
