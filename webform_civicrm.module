@@ -9,6 +9,7 @@
 
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\webform\Entity\WebformSubmission;
+use Drupal\webform_civicrm\Utils;
 
 /**
  * The versions of CiviCRM and WebForm. Min is >=.  Max is <. FALSE = no MAX
